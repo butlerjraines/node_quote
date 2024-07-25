@@ -39,9 +39,13 @@ jobs:
       
     - name: Build project
       run: npm run build --if-present
+      
     - name: Create deployment package
       run: |
-        tar --exclude='.git' --exclude='.github' --exclude='node_modules' -czf deploy.tar.gz .
+        mkdir staging
+        rsync -av --exclude='.git' --exclude='.github' --exclude='node_modules' ./ staging/
+        tar -czf deploy.tar.gz -C staging .
+        rm -rf staging
     
     - name: Deploy to server
       env:
