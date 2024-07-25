@@ -50,7 +50,7 @@ jobs:
     - name: Deploy to server
       env:
         SSH_PASSWORD: ${{ secrets.SERVER_SSH_PASSWORD }}
-        HOST: ${{ secrets.HOST }}
+        HOST: ${{ secrets.SERVER_HOST }}
       run: |
         sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SERVER_USERNAME }}@$HOST:/tmp/
         sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@$HOST << EOF
