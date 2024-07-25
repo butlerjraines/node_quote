@@ -19,7 +19,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production  # Specify the environment name here
+    environment: PROD  # Specify the environment name here
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
