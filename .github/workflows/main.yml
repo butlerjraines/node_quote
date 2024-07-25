@@ -1,7 +1,7 @@
 name: Deploy Node.js to Digital Ocean
 
 env:
-  PATH: '/var/www/quote'
+  REMOTE_DIR: '/var/www/quote'
   SCRIPT: 'app.js'
   NAME: 'quote'
 
@@ -50,13 +50,13 @@ jobs:
       run: |
         sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SERVER_USERNAME }}@$HOST:/tmp/
         sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@$HOST << EOF
-          rm -rf ${{ env.PATH }}
-          mkdir -p ${{ env.PATH }}
-          tar -xzf /tmp/deploy.tar.gz -C ${{ env.PATH }}
+          rm -rf ${{ env.REMOTE_DIR }}
+          mkdir -p ${{ env.REMOTE_DIR }}
+          tar -xzf /tmp/deploy.tar.gz -C ${{ env.REMOTE_DIR }}
           rm /tmp/deploy.tar.gz
           cd ${{ env.PATH }}
           npm install --production
-          pm2 restart ${{ env.NAME }} || pm2 start ${{ env.PATH }}${{ env.SCRIPT }} --name ${{ env.NAME }}
+          pm2 restart ${{ env.NAME }} || pm2 start ${{ env.REMOTE_DIR }}${{ env.SCRIPT }} --name ${{ env.NAME }}
           sudo systemctl restart nginx
         EOF
     
