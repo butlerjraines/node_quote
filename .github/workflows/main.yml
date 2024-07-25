@@ -1,7 +1,7 @@
 name: Deploy Node.js to Digital Ocean
 
 env:
-  PATH: '/var/www/quote'
+  #PATH: '/var/www/quote'
   SCRIPT: 'app.js'
   NAME: 'quote'
 
