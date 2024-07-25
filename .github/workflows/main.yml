@@ -51,19 +51,32 @@ jobs:
       env:
         SSH_PASSWORD: ${{ secrets.SERVER_SSH_PASSWORD }}
         HOST: ${{ secrets.SERVER_HOST }}
+        REMOTE_DIR: /var/www/quote
+        SCRIPT: app.js
+        NAME: quote
       run: |
+        echo "Debugging information:"
+        echo "HOST: $HOST"
+        echo "REMOTE_DIR: $REMOTE_DIR"
+        echo "SCRIPT: $SCRIPT"
+        echo "NAME: $NAME"
+        if [ -z "$HOST" ]; then
+          echo "Error: HOST is empty. Please check your SERVER_HOST secret."
+          exit 1
+        fi
+        if [ -z "$SSH_PASSWORD" ]; then
+          echo "Error: SSH_PASSWORD is empty. Please check your SERVER_SSH_PASSWORD secret."
+          exit 1
+        fi
         sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SERVER_USERNAME }}@$HOST:/tmp/
         sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@$HOST << EOF
-          rm -rf ${{ env.REMOTE_DIR }}
-          mkdir -p ${{ env.REMOTE_DIR }}
-          tar -xzf /tmp/deploy.tar.gz -C ${{ env.REMOTE_DIR }}
+          rm -rf $REMOTE_DIR
+          mkdir -p $REMOTE_DIR
+          tar -xzf /tmp/deploy.tar.gz -C $REMOTE_DIR
           rm /tmp/deploy.tar.gz
-          cd ${{ env.PATH }}
+          cd $REMOTE_DIR
           npm install --production
-          pm2 restart ${{ env.NAME }} || pm2 start ${{ env.REMOTE_DIR }}${{ env.SCRIPT }} --name ${{ env.NAME }}
+          pm2 restart $NAME || pm2 start $REMOTE_DIR/$SCRIPT --name $NAME
           sudo systemctl restart nginx
         EOF
     
-    - name: Install sshpass
-      run: sudo apt-get install sshpass
-
