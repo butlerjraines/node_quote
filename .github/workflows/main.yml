@@ -1,0 +1,54 @@
+name: Deploy Node.js to Digital Ocean
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - ".github/**"
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - ".github/**"
+      - '.gitignore'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build --if-present
+    
+    - name: Install sshpass
+      run: sudo apt-get install sshpass
+    
+    - name: Create deployment package
+      run: |
+        tar --exclude='.git' --exclude='.github' --exclude='node_modules' -czf deploy.tar.gz .
+    
+    - name: Deploy to server
+      env:
+        SSH_PASSWORD: ${{ secrets.SERVER_SSH_PASSWORD }}
+        HOST: ${{ secrets.SERVER_HOST }}
+      run: |
+        sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no deploy.tar.gz ${{ secrets.SERVER_USERNAME }}@$HOST:/tmp/
+        sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USERNAME }}@$HOST << EOF
+          rm -rf /var/www/print
+          mkdir -p /var/www/print
+          tar -xzf /tmp/deploy.tar.gz -C /var/www/print
+          rm /tmp/deploy.tar.gz
+          cd /var/www/print
+          npm install --production
+          pm2 restart print-rewards || pm2 start /var/www/print/app.js --name print-rewards
+          sudo systemctl restart nginx
+        EOF
