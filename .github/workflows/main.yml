@@ -54,6 +54,6 @@ jobs:
           rm /tmp/deploy.tar.gz
           cd ${{ env.PATH }}
           npm install --production
-          pm2 restart print-rewards || pm2 start ${{ env.PATH }}${{ env.SCRIPT }} --name print-rewards
+          pm2 restart print-rewards || pm2 start ${{ env.PATH }}${{ env.SCRIPT }} --name ${{ env.NAME }}
           sudo systemctl restart nginx
         EOF
