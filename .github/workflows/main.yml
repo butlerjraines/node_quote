@@ -77,7 +77,13 @@ jobs:
           rm /tmp/deploy.tar.gz
           cd $REMOTE_DIR
           npm install --production
-          pm2 restart $NAME || pm2 start $REMOTE_DIR/$SCRIPT --name $NAME
+          pm2 describe $NAME > /dev/null
+          if [ $? -eq 0 ]; then
+            pm2 restart $NAME
+          else
+            pm2 start $REMOTE_DIR/$SCRIPT --name $NAME
+          fi
           sudo systemctl restart nginx
         EOF
+        pm2 save
     
