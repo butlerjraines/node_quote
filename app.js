@@ -4,7 +4,7 @@ const port = 3002;
 
 // Define a route for the root URL
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello Worldbuddy!');
 });
 
 // Start the server
