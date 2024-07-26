@@ -78,11 +78,26 @@ jobs:
           cd $REMOTE_DIR
           npm install --production
           pm2 describe $NAME > /dev/null
-          if [ $? -eq 0 ]; then
-            pm2 restart $NAME
-          else
-            pm2 start $REMOTE_DIR/$SCRIPT --name $NAME
+          # Check if PM2 startup is configured
+          if ! pm2 startup | grep -q "already configured"; then
+            echo "PM2 startup not configured. Configuring now..."
+            pm2 startup
+            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp /home/$USER
           fi
+
+          # Create or update ecosystem file
+          cat > ecosystem.config.js << EOL
+          module.exports = {
+            apps : [{
+              name: "$NAME",
+              script: "$SCRIPT",
+              instances: 1,
+              autorestart: true,
+              watch: false,
+              max_memory_restart: '1G'
+            }]
+          };
+          pm2 restart ecosystem.config.js
           pm2 save
           sudo systemctl restart nginx
         EOF
