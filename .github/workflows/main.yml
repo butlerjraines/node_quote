@@ -83,7 +83,8 @@ jobs:
           else
             pm2 start $REMOTE_DIR/$SCRIPT --name $NAME
           fi
+          pm2 save
           sudo systemctl restart nginx
         EOF
-        pm2 save
+        
     
