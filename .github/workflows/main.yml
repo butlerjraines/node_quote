@@ -77,27 +77,45 @@ jobs:
           rm /tmp/deploy.tar.gz
           cd $REMOTE_DIR
           npm install --production
-          pm2 describe $NAME > /dev/null
+    
+          # Check if centralized ecosystem file exists, if not create it
+          ECOSYSTEM_FILE="/var/www/ecosystem.config.js"
+          if [ ! -f "$ECOSYSTEM_FILE" ]; then
+            echo "Creating centralized ecosystem file..."
+            echo "module.exports = { apps: [] };" > "$ECOSYSTEM_FILE"
+          fi
+    
+          # Update or add the current app to the ecosystem file
+          node -e "
+            const fs = require('fs');
+            const ecosystem = require('$ECOSYSTEM_FILE');
+            const appIndex = ecosystem.apps.findIndex(app => app.name === '$NAME');
+            const appConfig = {
+              name: '$NAME',
+              script: '$REMOTE_DIR/$SCRIPT',
+              instances: 1,
+              autorestart: true,
+              watch: false,
+              max_memory_restart: '1G'
+            };
+            if (appIndex === -1) {
+              ecosystem.apps.push(appConfig);
+            } else {
+              ecosystem.apps[appIndex] = appConfig;
+            }
+            fs.writeFileSync('$ECOSYSTEM_FILE', 'module.exports = ' + JSON.stringify(ecosystem, null, 2));
+          "
+    
           # Check if PM2 startup is configured
           if ! pm2 startup | grep -q "already configured"; then
             echo "PM2 startup not configured. Configuring now..."
             pm2 startup
             sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp /home/$USER
           fi
-
-          # Create or update ecosystem file
-          cat > ecosystem.config.js << EOL
-          module.exports = {
-            apps : [{
-              name: "$NAME",
-              script: "$SCRIPT",
-              instances: 1,
-              autorestart: true,
-              watch: false,
-              max_memory_restart: '1G'
-            }]
-          };
-          pm2 restart ecosystem.config.js
+    
+          # Reload the updated app
+          pm2 reload "$ECOSYSTEM_FILE" --only $NAME
+    
           pm2 save
           sudo systemctl restart nginx
         EOF
